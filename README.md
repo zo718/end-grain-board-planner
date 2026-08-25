@@ -6,4 +6,4 @@ self-contained page, no install and no backend required.
 
 Live site: https://zo718.github.io/end-grain-board-planner/
 
-Built with [Claude](https://claude.ai).
+Built by Alfredo Jo with the help of Claude.
