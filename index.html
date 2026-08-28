@@ -1791,15 +1791,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         ctx.fillRect(x, y, bw, bh);
         if (drawTexture){
           const rnd1 = hashRand(r,c,1), rnd2 = hashRand(r,c,2);
+          const rnd3 = hashRand(r,c,3), rnd4 = hashRand(r,c,4);
+          const ringSize = Math.min(bw,bh);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, bw, bh);
+          ctx.clip();
           ctx.strokeStyle = "rgba(0,0,0,0.14)";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.arc(x+bw*(0.25+rnd1*0.5), y+bh*(0.3+rnd2*0.4), Math.min(bw,bh)*0.16, 0, Math.PI*2);
+          ctx.arc(x+bw*(0.1+rnd1*0.8), y+bh*(0.1+rnd2*0.8), ringSize*(0.6+rnd3*0.5), 0, Math.PI*2);
           ctx.stroke();
           ctx.strokeStyle = "rgba(255,255,255,0.08)";
           ctx.beginPath();
-          ctx.arc(x+bw*(0.62+rnd2*0.25), y+bh*(0.55+rnd1*0.25), Math.min(bw,bh)*0.2, 0, Math.PI*2);
+          ctx.arc(x+bw*(0.1+rnd3*0.8), y+bh*(0.1+rnd4*0.8), ringSize*(0.9+rnd2*0.55), 0, Math.PI*2);
           ctx.stroke();
+          ctx.restore();
         }
       }
     }
@@ -2038,11 +2045,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         const x = c*cellW, y = r*cellH;
         if (drawTexture){
           const rnd1 = hashRand(r,c,1), rnd2 = hashRand(r,c,2);
+          const rnd3 = hashRand(r,c,3);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, cellW, cellH);
+          ctx.clip();
           ctx.strokeStyle = "rgba(0,0,0,0.14)";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.arc(x + cellW*(0.3+rnd1*0.4), y + cellH*(0.3+rnd2*0.4), Math.min(cellW,cellH)*0.1, 0, Math.PI*2);
+          ctx.arc(x + cellW*(0.1+rnd1*0.8), y + cellH*(0.1+rnd2*0.8), Math.min(cellW,cellH)*(0.55+rnd3*0.5), 0, Math.PI*2);
           ctx.stroke();
+          ctx.restore();
         }
         // Alternating blank rotation (columns) plus alternating slice
         // rotation (rows) compounds into a 2D checkerboard of diagonal
@@ -2258,15 +2271,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if (drawTexture){
           const rnd1 = hashRand(r,c,1);
           const rnd2 = hashRand(r,c,2);
+          const rnd3 = hashRand(r,c,3);
+          const rnd4 = hashRand(r,c,4);
+          const ringSize = Math.min(cellW,cellH);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, cellW, cellH);
+          ctx.clip();
           ctx.strokeStyle = "rgba(0,0,0,0.14)";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.arc(x + cellW*(0.3+rnd1*0.4), y + cellH*(0.3+rnd2*0.4), Math.min(cellW,cellH)*0.12, 0, Math.PI*2);
+          ctx.arc(x + cellW*(0.1+rnd1*0.8), y + cellH*(0.1+rnd2*0.8), ringSize*(0.55+rnd3*0.5), 0, Math.PI*2);
           ctx.stroke();
           ctx.strokeStyle = "rgba(255,255,255,0.10)";
           ctx.beginPath();
-          ctx.arc(x + cellW*(0.55+rnd2*0.3), y + cellH*(0.5+rnd1*0.3), Math.min(cellW,cellH)*0.18, 0, Math.PI*2);
+          ctx.arc(x + cellW*(0.1+rnd3*0.8), y + cellH*(0.1+rnd4*0.8), ringSize*(0.85+rnd2*0.55), 0, Math.PI*2);
           ctx.stroke();
+          ctx.restore();
         }
       }
     }
