@@ -339,6 +339,9 @@
     padding: 0 10px 8px;
     border-bottom: 1px solid var(--line);
   }
+  /* Numeric columns: line the header up over the right-aligned values
+     below it, instead of leaving it left-aligned and off to one side. */
+  table.legend th.num, table.materials th.num { text-align: right; }
   table.legend td, table.materials td {
     padding: 9px 10px;
     border-bottom: 1px solid var(--line);
@@ -673,9 +676,12 @@
           <span class="label-row"><span class="name">Square size</span><span class="frac" id="fracModule"></span></span>
           <input type="number" id="inModule" min="0.375" max="2" step="0.125" value="0.75">
         </label>
+        <p class="notes-heading" style="margin:2px 0 0;padding-top:12px;border-top:1px solid var(--line);">Planning on dimensional lumber?</p>
+        <p style="font-size:11px;color:var(--ink-soft);margin:0 0 2px;">Enter the raw board you're buying below — length, width and thickness — to get an accurate quantity needed.</p>
         <label class="field">
           <span class="label-row"><span class="name">Stock length</span><span class="frac" id="fracStock"></span></span>
           <input type="number" id="inStockLength" min="24" max="240" step="1" value="96">
+          <div class="chips" id="stockLengthPresetChips"></div>
           <span style="font-size:11px;color:var(--ink-soft);">Length of the raw boards you buy, in inches — used to figure out how many you'll need.</span>
         </label>
         <label class="field">
@@ -686,8 +692,9 @@
         </label>
         <label class="field">
           <span class="label-row"><span class="name">Stock thickness</span><span class="frac" id="fracStockThickness"></span></span>
-          <input type="number" id="inStockThickness" min="0.5" max="2" step="0.125" value="1">
-          <span style="font-size:11px;color:var(--ink-soft);">Thickness of the raw boards you're buying — before you resaw them into strips. Rough 4/4 lumber runs about 1"; dressed/S4S "1x" boards from a home center are closer to 3/4". This changes the Linear Ft and Boards numbers below.</span>
+          <input type="number" id="inStockThickness" min="0.5" max="2" step="0.125" value="0.75">
+          <div class="chips" id="stockThicknessPresetChips"></div>
+          <span style="font-size:11px;color:var(--ink-soft);">Thickness of the raw boards you're buying — before you resaw them into strips. Dressed/S4S "1x" boards from a home center run about 3/4"; rough 4/4 lumber is closer to 1". This changes the Linear Ft and Boards numbers below.</span>
         </label>
       </div>
 
@@ -776,6 +783,18 @@
         </div>
       </section>
 
+      <section class="board-block" id="boardsToBuyBlock">
+        <p class="eyebrow">Boards to buy</p>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;max-width:64ch;">A more literal read on the same question: instead of going through board feet, this rips actual <b>module-wide strips</b> straight across the width of one raw board (using the Stock length, width and thickness you set in the sidebar), then counts how many whole boards that takes per species.</p>
+        <div class="table-scroll">
+          <table class="materials" id="boardsToBuyTable">
+            <thead><tr><th>Wood</th><th class="num">Strips/board</th><th class="num">Boards needed</th><th class="num">Leftover strip</th></tr></thead>
+            <tbody id="boardsToBuyBody"></tbody>
+          </table>
+        </div>
+        <p class="cutplan-footnote" id="boardsToBuyFootnote"></p>
+      </section>
+
       <section class="board-block" id="cutPlanBlock">
         <p class="eyebrow">Your cut plan</p>
         <p id="cutPlanIntro" class="cutplan-intro"></p>
@@ -821,18 +840,6 @@
       <p style="font-size:11.5px;color:var(--ink-soft);margin:10px 2px 24px;">
         *Includes a 40% allowance for saw kerf, jointing and planing losses across the two lamination passes, and assumes stock at the Stock length, width and thickness set in the sidebar — adjust those to what your supplier actually stocks. †Boards needed and leftover assume each board you buy is cut to the Stock length set in the sidebar; real lumber often runs a bit short of its nominal length, so leave yourself a couple inches of slack.
       </p>
-
-      <section class="board-block" id="boardsToBuyBlock">
-        <p class="eyebrow">Boards to buy</p>
-        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;max-width:64ch;">A more literal read on the same question: instead of going through board feet, this rips actual <b>module-wide strips</b> straight across the width of one raw board (using the Stock length, width and thickness you set in the sidebar), then counts how many whole boards that takes per species.</p>
-        <div class="table-scroll">
-          <table class="materials" id="boardsToBuyTable">
-            <thead><tr><th>Wood</th><th class="num">Strips/board</th><th class="num">Boards needed</th><th class="num">Leftover strip</th></tr></thead>
-            <tbody id="boardsToBuyBody"></tbody>
-          </table>
-        </div>
-        <p class="cutplan-footnote" id="boardsToBuyFootnote"></p>
-      </section>
 
       <section class="notes-block" style="margin-bottom:20px;">
         <p class="eyebrow">Reading the numbers</p>
@@ -1351,16 +1358,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   // Stock width by hand. Hardwood is usually sold random-width, so these
   // are typical planning values rather than a fixed nominal size.
   const STOCKWIDTH_PRESETS = [
-    { label:"4\"", value:4, note:"Narrow stock — easiest to find, more rip waste per board." },
+    { label:"5\"", value:5, note:"Narrower stock — easier to find, a bit more rip waste per board." },
     { label:"6\"", value:6, note:"Average random-width hardwood — a safe planning default." },
+    { label:"7\"", value:7, note:"Wider stock — fewer rips wasted per board." },
     { label:"8\"", value:8, note:"Wide stock — fewer rips wasted, pricier and harder to source." },
+  ];
+
+  // Common raw-stock thicknesses, for a quick starting point before
+  // fine-tuning Stock thickness by hand.
+  const STOCKTHICKNESS_PRESETS = [
+    { label:"1\"", value:1, note:"Rough 4/4 lumber — the standard hardwood-supplier thickness." },
+    { label:"2\"", value:2, note:"Rough 8/4 lumber — thick stock, useful if you're gluing up in fewer layers." },
+  ];
+
+  // Common raw-stock lengths, for a quick starting point before
+  // fine-tuning Stock length by hand.
+  const STOCKLENGTH_PRESETS = [
+    { label:"24\"", value:24, note:"Short offcuts or small-shop stock." },
+    { label:"48\"", value:48, note:"Half-length board — easier to handle and transport." },
+    { label:"96\"", value:96, note:"Standard full-length hardwood board — the most common size sold." },
   ];
 
   const state = {
     width: 12, length: 18, thickness: 1.25, module: 0.75,
     stockLength: 96,
     stockWidth: 6,
-    stockThickness: 1,
+    stockThickness: 0.75,
     pattern: "checker",
     orientation: "horizontal",
     numColors: 3,
@@ -2273,7 +2296,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function render(){
     renderSizePresets();
     renderThicknessPresets();
+    renderStockLengthPresets();
     renderStockWidthPresets();
+    renderStockThicknessPresets();
     if (state.pattern === "brick") { renderBrick(); return; }
     if (state.pattern === "woveninlay") { renderWoven(); return; }
     const gridDims = computeGrid();
@@ -3047,6 +3072,50 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     });
   }
 
+  function renderStockThicknessPresets(){
+    const wrap = document.getElementById("stockThicknessPresetChips");
+    wrap.innerHTML = "";
+    STOCKTHICKNESS_PRESETS.forEach(p => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.title = p.note;
+      const active = state.stockThickness === p.value;
+      if (active) chip.style.borderColor = "var(--accent)";
+      if (active) chip.style.color = "var(--ink)";
+      chip.textContent = p.label;
+      chip.addEventListener("click", () => {
+        state.stockThickness = p.value;
+        document.getElementById("inStockThickness").value = p.value;
+        renderStockThicknessPresets();
+        render();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
+  function renderStockLengthPresets(){
+    const wrap = document.getElementById("stockLengthPresetChips");
+    wrap.innerHTML = "";
+    STOCKLENGTH_PRESETS.forEach(p => {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.title = p.note;
+      const active = state.stockLength === p.value;
+      if (active) chip.style.borderColor = "var(--accent)";
+      if (active) chip.style.color = "var(--ink)";
+      chip.textContent = p.label;
+      chip.addEventListener("click", () => {
+        state.stockLength = p.value;
+        document.getElementById("inStockLength").value = p.value;
+        renderStockLengthPresets();
+        render();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
   function renderPresets(){
     const wrap = document.getElementById("presetChips");
     wrap.innerHTML = "";
@@ -3159,6 +3228,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="board-meta">${document.getElementById("boardMeta").innerHTML}</div>
       ${grainCompareSection}
 
+      <p class="eyebrow">Boards to buy</p>
+      <div class="table-scroll">${boardsToBuyTableHTML}</div>
+      <p class="cutplan-footnote">${boardsToBuyFootnote}</p>
+
       <p class="eyebrow">Key numbers</p>
       <div class="keynum-row">${keyNumbers}</div>
 
@@ -3175,10 +3248,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
       <p class="eyebrow">Material estimate</p>
       <div class="table-scroll">${materialsTableHTML}</div>
-
-      <p class="eyebrow">Boards to buy</p>
-      <div class="table-scroll">${boardsToBuyTableHTML}</div>
-      <p class="cutplan-footnote">${boardsToBuyFootnote}</p>
 
       ${buildNotesHTML}
 
@@ -3390,6 +3459,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       y += rowH + 16;
     }
 
+    eyebrow("Boards to buy");
+    tableFromDom(document.getElementById("boardsToBuyBody").closest("table"));
+    paragraph(document.getElementById("boardsToBuyFootnote").textContent, 8);
+    y += 6;
+
     eyebrow("Key numbers");
     const keyNumEls = [...document.querySelectorAll("#cutPlanKeyNumbers .keynum")];
     if (keyNumEls.length){
@@ -3498,10 +3572,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     eyebrow("Material estimate");
     tableFromDom(document.getElementById("materialsBody").closest("table"));
-
-    eyebrow("Boards to buy");
-    tableFromDom(document.getElementById("boardsToBuyBody").closest("table"));
-    paragraph(document.getElementById("boardsToBuyFootnote").textContent, 8);
 
     eyebrow("Build notes");
     const notesSection = document.getElementById("buildNotesSection");
