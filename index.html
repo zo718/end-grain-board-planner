@@ -788,7 +788,7 @@
         <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;max-width:64ch;">A more literal read on the same question: instead of going through board feet, this rips actual <b>module-wide strips</b> straight across the width of one raw board (using the Stock length, width and thickness you set in the sidebar), then counts how many whole boards that takes per species.</p>
         <div class="table-scroll">
           <table class="materials" id="boardsToBuyTable">
-            <thead><tr><th>Wood</th><th class="num">Strips/board</th><th class="num">Boards needed</th><th class="num">Leftover strip</th></tr></thead>
+            <thead><tr><th>Wood</th><th class="num">Strips/board</th><th class="num">Strips needed</th><th class="num">Boards needed</th></tr></thead>
             <tbody id="boardsToBuyBody"></tbody>
           </table>
         </div>
@@ -859,6 +859,10 @@
           <div class="gl-row">
             <dt>Strips/board</dt>
             <dd>How many module-wide strips you can rip side by side across one raw board's Stock width, with a blade kerf's worth of gap left between each rip. A wider Stock width — or a smaller Square size — gets you more strips per board.</dd>
+          </div>
+          <div class="gl-row">
+            <dt>Strips needed</dt>
+            <dd>How many full-length strips of that species your design actually needs. If this is less than Strips/board, one board covers it — you'd only rip that many strips and leave the rest of the board's width uncut, not use the whole thing.</dd>
           </div>
         </dl>
       </section>
@@ -2471,21 +2475,24 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       // Total strip length needed: n squares × module width, inflated by the
       // same waste allowance used above for kerf and trim losses.
       const stripInches = n * module * WASTE_FACTOR;
+      // How many full-length strips that comes out to — the number you'd
+      // actually rip, not the number that would fit if you ripped the
+      // whole board width regardless of need.
+      const stripsNeeded = stripInches > 0 ? Math.max(1, Math.ceil(stripInches / stockLength)) : 0;
       const boards = stripInches > 0 ? Math.max(1, Math.ceil(stripInches / supplyPerBoard)) : 0;
-      const leftoverIn = boards > 0 ? Math.max(0, boards*supplyPerBoard - stripInches) : 0;
-      return { w, boards, leftoverIn };
+      return { w, stripsNeeded, boards };
     });
     const totalBoards = rows.reduce((a,r)=>a+r.boards,0);
     document.getElementById("boardsToBuyBody").innerHTML =
       rows.map(r => `<tr>
         <td class="name-cell"><span class="swatch" style="background:${r.w.hex}"></span>${r.w.name}</td>
         <td class="num">${stripsPerBoard}</td>
+        <td class="num">${r.stripsNeeded}</td>
         <td class="num">${r.boards}</td>
-        <td class="num">${toFraction(r.leftoverIn, 1)}</td>
       </tr>`).join("") +
-      `<tr class="total"><td>Total</td><td class="num">—</td><td class="num">${totalBoards}</td><td class="num">—</td></tr>`;
+      `<tr class="total"><td>Total</td><td class="num">—</td><td class="num">—</td><td class="num">${totalBoards}</td></tr>`;
     document.getElementById("boardsToBuyFootnote").textContent =
-      `Each ${toFraction(stockWidth)}-wide, ${toFraction(stockLength)}-long board rips into ${stripsPerBoard} strip${stripsPerBoard===1?"":"s"} at your ${toFraction(module)} square size (allowing a ${toFraction(KERF)} kerf between rip cuts), giving ${toFraction(supplyPerBoard, 1)} of usable strip length per board. Includes the same 40% kerf/trim allowance as the Material estimate above.`;
+      `Each ${toFraction(stockWidth)}-wide, ${toFraction(stockLength)}-long board rips into ${stripsPerBoard} strip${stripsPerBoard===1?"":"s"} at your ${toFraction(module)} square size (allowing a ${toFraction(KERF)} kerf between rip cuts). Strips needed is how many of those you'd actually cut — when it's less than Strips/board, the rest of that board's width stays uncut. Includes the same 40% kerf/trim allowance as the Material estimate above.`;
   }
 
   const PATTERN_NAMES = {
