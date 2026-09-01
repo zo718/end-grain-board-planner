@@ -2460,7 +2460,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <td class="num">${r.bdft.toFixed(2)}</td>
         <td class="num">${r.linearFt.toFixed(1)}</td>
         <td class="num">${r.boards}</td>
-        <td class="num">${toFeetInches(r.leftoverIn)}</td>
+        <td class="num">${toFeetInches(r.leftoverIn, 1)}</td>
       </tr>`).join("") +
       `<tr class="total"><td>Total</td><td class="num">${totalBdft.toFixed(2)}</td><td class="num">${totalLin.toFixed(1)}</td><td class="num">${totalBoards}</td><td class="num">—</td></tr>`;
   }
@@ -2492,7 +2492,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <td class="name-cell"><span class="swatch" style="background:${r.w.hex}"></span>${r.w.name}</td>
         <td class="num">${stripsPerBoard}</td>
         <td class="num">${r.boards}</td>
-        <td class="num">${toFeetInches(r.leftoverIn)}</td>
+        <td class="num">${toFeetInches(r.leftoverIn, 1)}</td>
       </tr>`).join("") +
       `<tr class="total"><td>Total</td><td class="num">—</td><td class="num">${totalBoards}</td><td class="num">—</td></tr>`;
     document.getElementById("boardsToBuyFootnote").textContent =
