@@ -706,6 +706,8 @@
               <option value="calmbands">Calm Bands</option>
               <option value="softrings">Soft Rings</option>
               <option value="centerpanel">Center Panel</option>
+              <option value="twill">Twill Weave</option>
+              <option value="plankbond">Plank Bond</option>
             </optgroup>
             <optgroup label="All patterns">
               <option value="stripes">Straight Stripes</option>
@@ -716,10 +718,8 @@
               <option value="pinwheel">Pinwheel</option>
               <option value="foursquare">Four-Square</option>
               <option value="basketweave">Basketweave</option>
-              <option value="twill">Twill Weave</option>
               <option value="woveninlay">Woven Diamond Inlay</option>
               <option value="brick">Brick Wall</option>
-              <option value="plankbond">Plank Bond</option>
               <option value="herringbone">Herringbone</option>
               <option value="zigzag">Zig-Zag</option>
               <option value="spiral">Spiral</option>
@@ -2530,7 +2530,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     plus:"Plus Inlay", frame:"Border Frame", random:"Random Speckle",
     calmbands:"Calm Bands", softrings:"Soft Rings", centerpanel:"Center Panel",
   };
-  const CALM_PATTERNS = ["calmbands", "softrings", "centerpanel", "twill"];
+  const CALM_PATTERNS = ["calmbands", "softrings", "centerpanel", "twill", "plankbond"];
   // Patterns whose rings are genuinely concentric — these build best from the
   // center outward, ring by ring, rather than one giant all-at-once dry-fit.
   const RING_PATTERNS = ["diamond", "squarerings", "bullseye", "spiral", "softrings"];
