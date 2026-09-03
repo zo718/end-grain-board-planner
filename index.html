@@ -716,8 +716,10 @@
               <option value="pinwheel">Pinwheel</option>
               <option value="foursquare">Four-Square</option>
               <option value="basketweave">Basketweave</option>
+              <option value="twill">Twill Weave</option>
               <option value="woveninlay">Woven Diamond Inlay</option>
               <option value="brick">Brick Wall</option>
+              <option value="plankbond">Plank Bond</option>
               <option value="herringbone">Herringbone</option>
               <option value="zigzag">Zig-Zag</option>
               <option value="spiral">Spiral</option>
@@ -1526,6 +1528,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         const parity = (blockR + blockC) % 2;
         return parity === 0 ? (c % n) : (r % n);
       }
+      case "twill": {
+        // Wide diagonal ribs marching across the board, like a woven
+        // fabric's twill weave — same idea as Checkerboard's diagonal bands
+        // at n>=3, but each band is several squares wide instead of one,
+        // which is what keeps it calm instead of busy.
+        const band = Math.max(1, Math.min(3, Math.floor(Math.min(rows, cols) / (n*2))));
+        const period = n*band;
+        let pos = (c - r) % period;
+        if (pos < 0) pos += period;
+        return Math.floor(pos/band) % n;
+      }
       case "herringbone": {
         const blockRow = Math.floor(r/2);
         const diag = (blockRow % 2 === 0) ? (r + c) : (r - c);
@@ -1677,7 +1690,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function drawGluePlanBrick(stats){
-    gluePlanLabel.textContent = "Brick + mortar panel — before it gets cut into rows";
+    const plank = isPlankBond();
+    gluePlanLabel.textContent = plank ? "Plank + reveal panel — before it gets cut into rows" : "Brick + mortar panel — before it gets cut into rows";
     gluePlanCaption.innerHTML = `<b>Yes — glue these strips together</b> into one striped panel first. You cut that panel into rows afterward; you don't cut the strips apart one by one.`;
     gluePlanFrame.style.height = "64px";
     const { cssW, cssH } = sizeGluePlanCanvas();
@@ -1777,11 +1791,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   const BRICK_MORTAR = 0.125; // fixed thin mortar reveal, regardless of brick size
+  // Plank Bond is the exact same running-bond construction as Brick Wall,
+  // just with each piece 4 modules long instead of 2 — longer, calmer bricks.
+  function brickLenMult(){ return state.pattern === "plankbond" ? 4 : 2; }
+  function isPlankBond(){ return state.pattern === "plankbond"; }
 
   function brickLayout(){
     const M = state.module;
     const mortar = BRICK_MORTAR;
-    const brickL = 2*M;
+    const brickL = brickLenMult()*M;
     const unitW = brickL + mortar; // brick+mortar unit along a course
     const unitH = M + mortar;      // one course's footprint across the stack
     const vertical = state.orientation === "vertical";
@@ -1874,10 +1892,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function updateMetaBrick(stats){
     const bl = stats.bl;
+    const pieceWord = isPlankBond() ? "planks" : "bricks";
+    const pieceLabel = isPlankBond() ? "Plank" : "Brick";
     document.getElementById("boardMeta").innerHTML = `
       <span>Finished size <b>${toFraction(bl.actualWidth)} × ${toFraction(bl.actualLength)}</b> × <b>${toFraction(state.thickness)}</b> thick</span>
-      <span>Layout <b>${stats.bricksPerCourse} bricks</b> × <b>${stats.numCourses} courses</b></span>
-      <span>Brick <b>${toFraction(bl.brickL)} × ${toFraction(bl.M)}</b>, mortar <b>${toFraction(bl.mortar)}</b></span>
+      <span>Layout <b>${stats.bricksPerCourse} ${pieceWord}</b> × <b>${stats.numCourses} courses</b></span>
+      <span>${pieceLabel} <b>${toFraction(bl.brickL)} × ${toFraction(bl.M)}</b>, mortar <b>${toFraction(bl.mortar)}</b></span>
     `;
     document.getElementById("fracWidth").textContent = toFraction(state.width);
     document.getElementById("fracLength").textContent = toFraction(state.length);
@@ -2020,6 +2040,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const foot = document.getElementById("cutPlanFootnote");
     renderKeyNumbers();
 
+    const plank = isPlankBond();
+    const patName = PATTERN_NAMES[state.pattern];
+    const wallWord = plank ? "plank floor" : "brick-and-mortar wall";
+    const pieceWord = plank ? "plank" : "brick";
+    const pieceWordCap = plank ? "Plank" : "Brick";
+    const jointWord = plank ? "reveal" : "mortar";
+    const jointWordCap = plank ? "Reveal" : "Mortar";
+
     const brickSp = byId(state.species[0]), mortarSp = byId(state.species[1]);
     const brickLf = toFraction(bl.brickL), Mf = toFraction(bl.M), Thf = toFraction(state.thickness);
     const mortarF = toFraction(bl.mortar);
@@ -2029,7 +2057,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const widthF = toFraction(bl.actualWidth), lengthF = toFraction(bl.actualLength);
     const courseSpanF = toFraction(bl.courseSpan);
 
-    intro.innerHTML = `<b>Brick Wall</b> copies a real brick-and-mortar wall: thick strips for the bricks, thin strips for the mortar lines, cut apart into rows (we'll call them "courses," same as a real brick wall) and re-stacked with a mortar spacer between each one. Target: <b>${widthF} × ${lengthF} × ${Thf}</b>, <b>${stats.bricksPerCourse}</b> bricks × <b>${stats.numCourses}</b> courses.`;
+    intro.innerHTML = `<b>${patName}</b> copies a real ${wallWord}: thick strips for the ${pieceWord}s, thin strips for the ${jointWord} lines, cut apart into rows (we'll call them "courses," same as a real brick wall) and re-stacked with a ${jointWord} spacer between each one. Target: <b>${widthF} × ${lengthF} × ${Thf}</b>, <b>${stats.bricksPerCourse}</b> ${pieceWord}s × <b>${stats.numCourses}</b> courses.`;
 
     renderMathBox(
       `Where that ${panelLenF} panel length comes from`,
@@ -2044,20 +2072,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     steps.innerHTML = [
       stepLi("thickness", `Cut both woods to <b>${Thf}</b> thick — this never changes for the rest of the build.`),
       stepLi("ripstrip", `Cut <span class="mono">${stats.bricksPerCourse}</span> <b>${brickSp.name}</b> strips at <b>${brickLf}</b> wide, and <span class="mono">${stats.bricksPerCourse}</span> thin <b>${mortarSp.name}</b> strips at <b>${mortarF}</b> wide — cut every strip at least <b>${panelLenF}</b> long (see the math above for why: <b>${stats.numCourses}</b> courses worth of wood, plus the kerf every saw cut chews up, plus room to trim square).`),
-      stepLi("glueedge", `Glue them side by side, alternating brick, mortar, brick, mortar…, into one long striped panel. Let it dry a full 24 hours before touching a saw to it — cutting too early lets the joints shift under blade pressure.`),
-      stepLi("crosscut", `Using a sliding cutting guide (sled) with a stop block set to exactly <b>${Mf}</b> — a stop block is just a scrap piece clamped in place so every cut lands in the same spot — cut the panel into <span class="mono">${stats.numCourses}</span> courses. Each course is one row of the brick pattern, and the stop block is what keeps every one the same size.`),
-      stepLi("stack", `Glue the courses back together stacked on top of each other, gluing a thin <b>${mortarF}</b> <b>${mortarSp.name}</b> spacer strip between every course, and sliding every other course sideways by about <b>${offsetF}</b> (half a brick) for the running-bond offset.`),
-      stepLi("trim", `Once it's fully dry, trim all four edges square — this is where the partial bricks along the border get cut clean, just like the preview.`),
+      stepLi("glueedge", `Glue them side by side, alternating ${pieceWord}, ${jointWord}, ${pieceWord}, ${jointWord}…, into one long striped panel. Let it dry a full 24 hours before touching a saw to it — cutting too early lets the joints shift under blade pressure.`),
+      stepLi("crosscut", `Using a sliding cutting guide (sled) with a stop block set to exactly <b>${Mf}</b> — a stop block is just a scrap piece clamped in place so every cut lands in the same spot — cut the panel into <span class="mono">${stats.numCourses}</span> courses. Each course is one row of the pattern, and the stop block is what keeps every one the same size.`),
+      stepLi("stack", `Glue the courses back together stacked on top of each other, gluing a thin <b>${mortarF}</b> <b>${mortarSp.name}</b> spacer strip between every course, and sliding every other course sideways by about <b>${offsetF}</b> (half a ${pieceWord}) for the running-bond offset.`),
+      stepLi("trim", `Once it's fully dry, trim all four edges square — this is where the partial ${pieceWord}s along the border get cut clean, just like the preview.`),
     ].join("");
 
     head.innerHTML = `<th>Wood</th><th>Role</th><th class="num">Qty</th><th class="num">Size</th>`;
     const horizQty = Math.max(0, stats.numCourses-1);
     body.innerHTML = `
-      <tr><td class="name-cell"><span class="swatch" style="background:${brickSp.hex}"></span>${brickSp.name}</td><td>Brick strips</td><td class="num">${stats.bricksPerCourse}</td><td class="num">${brickLf} × ${Thf} × ${panelLenF}</td></tr>
-      <tr><td class="name-cell"><span class="swatch" style="background:${mortarSp.hex}"></span>${mortarSp.name}</td><td>Vertical mortar</td><td class="num">${stats.bricksPerCourse}</td><td class="num">${mortarF} × ${Thf} × ${panelLenF}</td></tr>
+      <tr><td class="name-cell"><span class="swatch" style="background:${brickSp.hex}"></span>${brickSp.name}</td><td>${pieceWordCap} strips</td><td class="num">${stats.bricksPerCourse}</td><td class="num">${brickLf} × ${Thf} × ${panelLenF}</td></tr>
+      <tr><td class="name-cell"><span class="swatch" style="background:${mortarSp.hex}"></span>${mortarSp.name}</td><td>Vertical ${jointWord}</td><td class="num">${stats.bricksPerCourse}</td><td class="num">${mortarF} × ${Thf} × ${panelLenF}</td></tr>
       <tr><td class="name-cell"><span class="swatch" style="background:${mortarSp.hex}"></span>${mortarSp.name}</td><td>Course spacers</td><td class="num">${horizQty}</td><td class="num">${courseSpanF} × ${Thf} × ${mortarF}</td></tr>
     `;
-    foot.textContent = `Panel length includes ${KERF}" kerf per course cut plus a ${TRIM}" trim allowance. Mortar reveal is fixed at ${BRICK_MORTAR}" — about one blade kerf — to keep the lines thin and crisp.`;
+    foot.textContent = `Panel length includes ${KERF}" kerf per course cut plus a ${TRIM}" trim allowance. ${jointWordCap} reveal is fixed at ${BRICK_MORTAR}" — about one blade kerf — to keep the lines thin and crisp.`;
     gluePlanWrap.style.display = "block";
     drawGluePlanBrick(stats);
   }
@@ -2226,7 +2254,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     drawBrick(stats.bl);
     state._lastGrid = null;
     updateGrainComparison();
-    document.getElementById("hoverLine").textContent = "Hover inspection isn't available for Brick Wall yet.";
+    document.getElementById("hoverLine").textContent = `Hover inspection isn't available for ${PATTERN_NAMES[state.pattern]} yet.`;
     updateMetaBrick(stats);
     updateLegend(stats.counts);
     updateMaterials(stats.counts);
@@ -2303,7 +2331,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     renderStockLengthPresets();
     renderStockWidthPresets();
     renderStockThicknessPresets();
-    if (state.pattern === "brick") { renderBrick(); return; }
+    if (state.pattern === "brick" || state.pattern === "plankbond") { renderBrick(); return; }
     if (state.pattern === "woveninlay") { renderWoven(); return; }
     const gridDims = computeGrid();
     const { actualWidth, actualLength, rows, cols } = gridDims;
@@ -2498,16 +2526,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   const PATTERN_NAMES = {
     stripes:"Straight Stripes", checker:"Checkerboard / Diagonal", diamond:"Diamond Rings",
     squarerings:"Square Rings", bullseye:"Bullseye", pinwheel:"Pinwheel", foursquare:"Four-Square",
-    basketweave:"Basketweave", woveninlay:"Woven Diamond Inlay", brick:"Brick Wall", herringbone:"Herringbone", zigzag:"Zig-Zag", spiral:"Spiral",
+    basketweave:"Basketweave", twill:"Twill Weave", woveninlay:"Woven Diamond Inlay", brick:"Brick Wall", plankbond:"Plank Bond", herringbone:"Herringbone", zigzag:"Zig-Zag", spiral:"Spiral",
     plus:"Plus Inlay", frame:"Border Frame", random:"Random Speckle",
     calmbands:"Calm Bands", softrings:"Soft Rings", centerpanel:"Center Panel",
   };
-  const CALM_PATTERNS = ["calmbands", "softrings", "centerpanel"];
+  const CALM_PATTERNS = ["calmbands", "softrings", "centerpanel", "twill"];
   // Patterns whose rings are genuinely concentric — these build best from the
   // center outward, ring by ring, rather than one giant all-at-once dry-fit.
   const RING_PATTERNS = ["diamond", "squarerings", "bullseye", "spiral", "softrings"];
   // Patterns with a fixed, dedicated 2-wood role (not swappable to 3/4 colors).
-  const TWO_COLOR_PATTERNS = ["brick", "woveninlay"];
+  const TWO_COLOR_PATTERNS = ["brick", "plankbond", "woveninlay"];
   const KERF = 0.125;   // typical table-saw blade width
   const TRIM = 1;       // extra length per piece for squaring cuts
 
@@ -2970,7 +2998,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       row.style.marginBottom = "8px";
       if (TWO_COLOR_PATTERNS.includes(state.pattern)){
         const lbl = document.createElement("span");
-        lbl.textContent = state.pattern === "brick" ? (i === 0 ? "Brick" : "Mortar") : (i === 0 ? "Base" : "Accent");
+        lbl.textContent = state.pattern === "brick" ? (i === 0 ? "Brick" : "Mortar")
+          : state.pattern === "plankbond" ? (i === 0 ? "Plank" : "Reveal")
+          : (i === 0 ? "Base" : "Accent");
         lbl.style.cssText = "font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);width:42px;flex:none;";
         row.appendChild(lbl);
       }
