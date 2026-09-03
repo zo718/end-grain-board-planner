@@ -10,6 +10,10 @@ Built by Zo718 with the help of Claude.
 
 ## Changelog
 
+### 2026-09-02
+- Added **Twill Weave**, a calm diagonal-rib pattern in the same low-contrast family as Basketweave.
+- Added **Plank Bond**, the same running-bond construction as Brick Wall but with each piece 4 modules long instead of 2, for a longer plank-style look.
+
 ### 2026-09-01
 - Renamed "Strips/board" to "Fit per board" in the Boards to buy table, so it reads as capacity vs. requirement instead of two similar-looking labels.
 - Replaced the "Leftover strip" figure with "Strips needed" — the old number counted a whole board's un-ripped width as if it were wasted material; now it's obvious at a glance why one board (or several) covers a design.
